@@ -20,7 +20,7 @@ function dishExists(req, res, next) {
 
 function dishHasId(req, res, next) {
   const { dishId } = req.params;
-  const foundDish = res.locals.dish;
+  const foundDish = dishes.find((dish) => dish.id === dishId);
   if (foundDish) {
     return next();
   }
@@ -31,8 +31,8 @@ function dishHasId(req, res, next) {
 }
 
 function idMatch(req, res, next) {
-  let { dishId } = req.params;
-  let { data: { id } = {} } = req.body;
+  const { dishId } = req.params;
+  const { data: { id } = {} } = req.body;
   if (id) {
     if (id == dishId) {
       return next();
@@ -47,7 +47,7 @@ function idMatch(req, res, next) {
 
 //validation functions, error message for these should return with 400 and an error message
 function hasName(req, res, next) {
-  let { data: { name } = {} } = req.body;
+  const { data: { name } = {} } = req.body;
   if (name && name.length !== 0) {
     return next();
   }
@@ -55,7 +55,7 @@ function hasName(req, res, next) {
 }
 
 function hasDescription(req, res, next) {
-  let { data: { description } = {} } = req.body;
+  const { data: { description } = {} } = req.body;
   if (description && description.length !== 0) {
     return next();
   }
@@ -63,7 +63,7 @@ function hasDescription(req, res, next) {
 }
 
 function hasPrice(req, res, next) {
-  let { data: { price } = {} } = req.body;
+  const { data: { price } = {} } = req.body;
   if (price && price > 0 && Number.isInteger(price)) {
     return next();
   }
@@ -71,7 +71,7 @@ function hasPrice(req, res, next) {
 }
 
 function hasImageUrl(req, res, next) {
-  let { data: { image_url } = {} } = req.body;
+  const { data: { image_url } = {} } = req.body;
   if (image_url && image_url.length !== 0) {
     return next();
   }
@@ -86,7 +86,7 @@ function list(req, res, next) {
 
 //get request w/ id
 function read(req, res, next) {
-  res.json({ data: req.locals.dish });
+  res.json({ data: res.locals.dish });
 }
 
 //put request w/ an id and body
@@ -103,8 +103,8 @@ function update(req, res, next) {
 
 //post request w/ a body
 function create(req, res, next) {
-  let { data: { name, description, price, image_url } = {} } = req.body;
-  let newDish = {
+  const { data: { name, description, price, image_url } = {} } = req.body;
+  const newDish = {
     id: nextId(),
     name: name,
     description: description,
@@ -124,8 +124,8 @@ module.exports = {
     idMatch,
     hasName,
     hasDescription,
-    hasImageUrl,
     hasPrice,
+    hasImageUrl,
     update,
   ],
   create: [hasName, hasImageUrl, hasDescription, hasPrice, create],
