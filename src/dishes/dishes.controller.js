@@ -7,11 +7,43 @@ const dishes = require(path.resolve("src/data/dishes-data"));
 const nextId = require("../utils/nextId");
 
 //middleware
-function dishExists(req, res, next) {}
+function dishExists(req, res, next) {
+  const { dishId } = req.params;
+  const foundDish = dishes.find((dish) => dish.id === dishId);
+  if (foundDish) {
+    //res.locals as an empty object and we are assigning it to the dish that is found
+    res.locals.dish = foundDish;
+    return next();
+  }
+  next({ status: 404, message: `Dish does not exist: ${dishId}.` });
+}
 
-function dishHasId(req, res, next) {}
+function dishHasId(req, res, next) {
+  const { dishId } = req.params;
+  const foundDish = res.locals.dish;
+  if (foundDish) {
+    return next();
+  }
+  next({
+    status: 404,
+    message: `Dish does not exist: ${foundDish.id}`,
+  });
+}
 
-function idMatch(req, res, next) {}
+function idMatch(req, res, next) {
+  let { dishId } = req.params;
+  let { data: { id } = {} } = req.body;
+  if (id) {
+    if (id == dishId) {
+      return next();
+    }
+    next({
+      status: 400,
+      message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`,
+    });
+  }
+  next();
+}
 
 //validation functions, error message for these should return with 400 and an error message
 function hasName(req, res, next) {
@@ -19,7 +51,7 @@ function hasName(req, res, next) {
   if (name && name.length !== 0) {
     return next();
   }
-  next({ status: 400, message: "Dish must include a name" });
+  next({ status: 400, message: "Dish must include a 'name'" });
 }
 
 function hasDescription(req, res, next) {
@@ -27,15 +59,15 @@ function hasDescription(req, res, next) {
   if (description && description.length !== 0) {
     return next();
   }
-  next({ status: 400, message: "Dish must include a description" });
+  next({ status: 400, message: "Dish must include a 'description'" });
 }
 
 function hasPrice(req, res, next) {
   let { data: { price } = {} } = req.body;
-  if (price && price > 0 && typeof(price) === "number") {
+  if (price && price > 0 && Number.isInteger(price)) {
     return next();
   }
-  next({ status: 400, message: "Dish must include a price" });
+  next({ status: 400, message: "Dish must include a 'price'" });
 }
 
 function hasImageUrl(req, res, next) {
@@ -43,7 +75,7 @@ function hasImageUrl(req, res, next) {
   if (image_url && image_url.length !== 0) {
     return next();
   }
-  next({ status: 400, message: "Dish must include a image_url" });
+  next({ status: 400, message: "Dish must include a 'image_url'" });
 }
 
 //crudl opertations, except delete
@@ -54,11 +86,20 @@ function list(req, res, next) {
 
 //get request w/ id
 function read(req, res, next) {
-  const { dishId } = req.params;
+  res.json({ data: req.locals.dish });
 }
 
-//put request w/ an id
-function update(req, res, next) {}
+//put request w/ an id and body
+function update(req, res, next) {
+  const foundDish = res.locals.dish;
+  const { data: { name, description, image_url, price } = {} } = req.body;
+  foundDish.name = name;
+  foundDish.description = description;
+  foundDish.image_url = image_url;
+  foundDish.price = price;
+
+  res.json({ data: foundDish });
+}
 
 //post request w/ a body
 function create(req, res, next) {
@@ -76,16 +117,16 @@ function create(req, res, next) {
 
 module.exports = {
   list,
-  read,
+  read: [dishExists, read],
   update: [
     dishExists,
     dishHasId,
     idMatch,
     hasName,
     hasDescription,
-    hasPrice,
     hasImageUrl,
+    hasPrice,
     update,
   ],
-  create: [hasName, hasDescription, hasPrice, hasImageUrl, create],
+  create: [hasName, hasImageUrl, hasDescription, hasPrice, create],
 };
