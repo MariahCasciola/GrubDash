@@ -6,7 +6,7 @@ const dishes = require(path.resolve("src/data/dishes-data"));
 // Use this function to assign ID's when necessary
 const nextId = require("../utils/nextId");
 
-//middleware
+//validation middleware
 function dishExists(req, res, next) {
   const { dishId } = req.params;
   const foundDish = dishes.find((dish) => dish.id === dishId);
@@ -129,4 +129,5 @@ module.exports = {
     update,
   ],
   create: [hasName, hasImageUrl, hasDescription, hasPrice, create],
+  delete:[],
 };
