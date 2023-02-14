@@ -129,5 +129,4 @@ module.exports = {
     update,
   ],
   create: [hasName, hasImageUrl, hasDescription, hasPrice, create],
-  delete:[],
 };

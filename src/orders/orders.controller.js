@@ -124,9 +124,10 @@ function destory(req, res, next) {
 }
 
 module.exports = {
-  list,
-  read: [orderExists, read],
-  create: [validateOrder, create],
   update: [orderExists, validateOrder, update],
+  read: [orderExists, read],
+  orderExists,
   destory: [orderExists, destory],
+  create: [validateOrder, create],
+  list,
 };
