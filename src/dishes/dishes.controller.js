@@ -19,8 +19,7 @@ function dishExists(req, res, next) {
 }
 
 function dishHasId(req, res, next) {
-  const { dishId } = req.params;
-  const foundDish = dishes.find((dish) => dish.id === dishId);
+  const foundDish = res.locals.dish;
   if (foundDish) {
     return next();
   }

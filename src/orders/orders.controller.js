@@ -21,8 +21,7 @@ function orderExists(req, res, next) {
 }
 
 function orderHasId(req, res, next) {
-  const { orderId } = req.params;
-  const foundOrder = orders.find((order) => order.id === orderId);
+  const foundOrder = res.locals.order;
   if (foundOrder) {
     return next();
   }
