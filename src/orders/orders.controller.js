@@ -9,7 +9,7 @@ const nextId = require("../utils/nextId");
 //validation middleware
 function orderExists(req, res, next) {
   const { orderId } = req.params;
-  const foundOrder = orders.find((order) => order.id == orderId);
+  const foundOrder = orders.find((order) => order.id === orderId);
   if (foundOrder) {
     res.locals.order = foundOrder;
     return next();
@@ -20,15 +20,65 @@ function orderExists(req, res, next) {
   });
 }
 
-//requirements of
-function validateOrder(req, res, next) {
-  const { data: { deliverTo, mobileNumber, status, dishes } = {} } = req.body;
+function orderHasId(req, res, next) {
+  const { orderId } = req.params;
+  const foundOrder = orders.find((order) => order.id === orderId);
+  if (foundOrder) {
+    return next();
+  }
+  next({
+    status: 404,
+    message: `Dish does not exist: ${foundOrder.id}`,
+  });
+}
+
+function idMatch(req, res, next) {
+  const { orderId } = req.params;
+  const { data: { id } = {} } = req.body;
+  if (id) {
+    if (id == orderId) {
+      return next();
+    }
+    next({
+      status: 400,
+      message: `Order id does not match route id. Order: ${id}, Route: ${orderId}`,
+    });
+  }
+  next();
+}
+
+function hasDeliverTo(req, res, next) {
+  const { data: { deliverTo } = {} } = req.body;
   if (!deliverTo || deliverTo === "") {
     next({ status: 400, message: "Order must include a deliverTo" });
   }
+  return next();
+}
+
+function hasMobileNumber(req, res, next) {
+  const { data: { mobileNumber } = {} } = req.body;
   if (!mobileNumber || mobileNumber === "") {
     next({ status: 400, message: "Order must include a mobileNumber" });
   }
+  return next();
+}
+
+function hasStatus(req, res, next) {
+  const { data: { status } = {} } = req.body;
+  if (!status || status === "" || status === "invalid") {
+    next({
+      status: 400,
+      message: `Order must have a status of pending, preparing, out-for-delivery, delivered`,
+    });
+  }
+  if (status === "delivered") {
+    next({ status: 400, message: `A delivered order cannot be changed` });
+  }
+  return next();
+}
+
+function hasDishes(req, res, next) {
+  const { data: { dishes } = {} } = req.body;
   if (!dishes) {
     next({ status: 400, message: "Order must include a dish" });
   }
@@ -80,24 +130,8 @@ function create(req, res, next) {
 
 // put request w/ id and a body
 function update(req, res, next) {
-  const { orderId } = req.params;
   const { data: { id, deliverTo, mobileNumber, status, dishes } = {} } =
     req.body;
-  if (id && id !== orderId) {
-    next({
-      status: 400,
-      message: `Order id does not match route id. Order: ${id}, Route: ${orderId}`,
-    });
-  }
-  if (!status || status === "" || status === "invalid") {
-    next({
-      status: 400,
-      message: `Order must have a status of pending, preparing, out-for-delivery, delivered`,
-    });
-  }
-  if (status === "delivered") {
-    next({ status: 400, message: `A delivered order cannot be changed` });
-  }
   const foundOrder = res.locals.order;
 
   foundOrder.deliverTo = deliverTo;
@@ -124,10 +158,19 @@ function destory(req, res, next) {
 }
 
 module.exports = {
-  update: [orderExists, validateOrder, update],
+  update: [
+    orderExists,
+    orderHasId,
+    idMatch,
+    hasDeliverTo,
+    hasMobileNumber,
+    hasStatus,
+    hasDishes,
+    update,
+  ],
   read: [orderExists, read],
   orderExists,
   destory: [orderExists, destory],
-  create: [validateOrder, create],
+  create: [hasDeliverTo, hasMobileNumber, hasDishes, create],
   list,
 };
